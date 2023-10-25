@@ -7,13 +7,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -52,13 +49,7 @@ public class MainActivity extends Activity {
         smsTextView = findViewById(R.id.smsTextView);
         savebutton = findViewById(R.id.button);
 
-        Calendar calendar = Calendar.getInstance();
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH) + 1; // Note: Months are zero-based, so add 1.
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-
-        //DateOfToday = day + "-" + month + "-" + year;
-        DateOfToday = "18-10-2023"; //testing date
+        DateOfToday = "21-10-2023"; //testing date
 
         hdfcSms = readHDFCSms(DateOfToday);
         smsTextView.setText(hdfcSms);
@@ -105,53 +96,57 @@ public class MainActivity extends Activity {
     }
     private String readHDFCSms(String DateOfToday) {
         try {
+            // Construct the query for SMS messages after the threshold date
             Uri uri = Uri.parse("content://sms/inbox");
 
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-            Date currentDate = null;
-            currentDate = sdf.parse(DateOfToday);
-            long thresholdDateInMillis = currentDate.getTime();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+            Date thresholdDate;
 
-            String[] addressesToCompare = new String[]{"%BANK%", "%BNK%", "%ATM%"};
+            try {
+                thresholdDate = dateFormat.parse(DateOfToday);
+            } catch (ParseException e) {
+                e.printStackTrace();
+                return "";
+            }
 
-// Create a selection string
-            String selection = "date < ? AND address LIKE ?";
+            long thresholdTimeInMillis = thresholdDate.getTime();
 
-            for (int i = 1; i < addressesToCompare.length; i++) {
+            String[] projection = null;
+            String selection = "(address LIKE ?";
+            String sortOrder = "date DESC";
+
+            List<String> selectionArgs = new ArrayList<String>(){{
+                add("%BANK%");
+                add("%BNK%");
+                add("%ATM%");
+                add("%SBI%");
+                add("%KVB%");
+                add("%HDFC%");
+                add("%AXIS%");
+                add("%UPI%");
+            }};
+
+            for (int i = 1; i < selectionArgs.size(); i++) {
                 selection += " OR address LIKE ?";
             }
 
-            // Create an array of arguments for the selection string
-            String[] selectionArgs = new String[]{String.valueOf(thresholdDateInMillis)};
+            selection += ") AND date > ?";
 
-            // Add placeholders for each address in the selectionArgs array
-            for (int i = 1; i <= addressesToCompare.length; i++) {
-                selectionArgs = Arrays.copyOf(selectionArgs, selectionArgs.length + 1);
-                selectionArgs[selectionArgs.length - 1] = addressesToCompare[i - 1];
-            }
-
-            System.out.println(selection);
-
-            for (String val:selectionArgs) {
-                System.out.println(val);
-            }
-
-            String sortOrder = "date DESC";
-            Cursor cursor = getContentResolver().query(uri, null, selection, selectionArgs, sortOrder);
+            selectionArgs.add(String.valueOf(thresholdTimeInMillis));
+            Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs.toArray(new String[0]), sortOrder);
 
             List<SMS> messages = new ArrayList<SMS>();
 
             if (cursor != null && cursor.moveToFirst()) {
 
-                Log.d("SMS", "Cursor is not null");
-
                 StringBuilder hdfcSms = new StringBuilder();
+
                 do {
                     @SuppressLint("Range") String address = cursor.getString(cursor.getColumnIndex(Telephony.Sms.ADDRESS));
                     @SuppressLint("Range") String body = cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY));
                     @SuppressLint("Range") String date = cursor.getString(cursor.getColumnIndex(Telephony.Sms.DATE));
+
                     String particularDate = date;
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
                     formattedDate = dateFormat.format(new Date(Long.parseLong(particularDate)));
 
                     String timeFormat = "h:mm a"; // Define the desired time format
@@ -173,7 +168,6 @@ public class MainActivity extends Activity {
 
                             //parse
 
-
                             messages.add(new SMS(address, "", "", "", "", "UPI"));
                         } else {
                             Log.d("SMS", "General category");
@@ -181,20 +175,20 @@ public class MainActivity extends Activity {
                         }
 
                         // Define a regular expression pattern to match the specific format.
-                    /* Pattern pattern = Pattern.compile("Pattern pattern = Pattern.compile(\"Your A/c XX\\\\d+ KuloDinesh" + "INR (\\\\d+\\\\.\\\\d{2}) on (\\\\d{2}-[A-Za-z]{3}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2})\\\\* (.*?)\\\\*Avl BAl is INR(\\\\d+\\\\.\\\\d{2})\");");
+                        /*Pattern pattern = Pattern.compile("Pattern pattern = Pattern.compile(\"Your A/c XX\\\\d+ KuloDinesh" + "INR (\\\\d+\\\\.\\\\d{2}) on (\\\\d{2}-[A-Za-z]{3}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2})\\\\* (.*?)\\\\*Avl BAl is INR(\\\\d+\\\\.\\\\d{2})\");");
 
-                    Matcher matcher = pattern.matcher(body);
-                    if (matcher.find()) {
-                        amount = matcher.group(1);
-                        receiver = matcher.group(4);
+                        Matcher matcher = pattern.matcher(body);
+                        if (matcher.find()) {
+                            amount = matcher.group(1);
+                            receiver = matcher.group(4);
 
-                        AutoCompleteTextView autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
-                        description = autoCompleteTextView.getText().toString();
+                            AutoCompleteTextView autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
+                            description = autoCompleteTextView.getText().toString();
 
-                        hdfcSms.append("Date: ").append(formattedDate).append("\nTime: ").append(formattedTime).append("\nAmount: ₹").append(amount).append("\nReceiver: ").append(receiver).append("\nDescription: ").append(description).append("\n\n");
-*/
-                    } else {
-                        System.out.println("No match found in the SMS.");
+                            hdfcSms.append("Date: ").append(formattedDate).append("\nTime: ").append(formattedTime).append("\nAmount: ₹").append(amount).append("\nReceiver: ").append(receiver).append("\nDescription: ").append(description).append("\n\n");
+                        } else {
+                            System.out.println("No match found in the SMS.");
+                        }*/
                     }
 
                 } while (cursor.moveToNext());
@@ -207,7 +201,7 @@ public class MainActivity extends Activity {
             System.out.println(messages.toArray());
             return "No HDFC Bank SMS messages found for ";
 
-        } catch (ParseException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
