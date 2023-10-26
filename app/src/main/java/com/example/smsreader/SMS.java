@@ -4,11 +4,8 @@ public class SMS {
 
     String address;
     String name;
-
     String amount;
-
     String date;
-
     String time;
     String category;
 
@@ -22,33 +19,38 @@ public class SMS {
         this.category = category;
     }
 
-    public String GetAddress()
+    public String getAddress()
     {
         return address;
     }
 
-    public String GetName()
+    public String getName()
     {
         return name;
     }
 
-    public String GetAmount()
+    public String getAmount()
     {
         return amount;
     }
 
-    public String GetDate()
+    public String getDate()
     {
         return date;
     }
 
-    public String GetTime()
+    public String getTime()
     {
         return time;
     }
 
-    public String GetCategory()
+    public String getCategory()
     {
         return category;
+    }
+
+    @Override
+    public String toString() {
+        return "Address: " + address + ", Name: " + name + ", Amount: " + amount + ", Date: " + date + ", Time: " + time + ", Category: " + category;
     }
 }

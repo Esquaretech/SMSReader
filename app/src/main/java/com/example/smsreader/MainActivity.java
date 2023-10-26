@@ -18,9 +18,11 @@ import android.provider.Telephony;
 import java.util.Calendar;
 
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,7 +36,7 @@ public class MainActivity extends Activity {
     private TextView smsTextView;
     private Button savebutton;
     public String jsonData;
-    private String hdfcSms;
+    private List<SMS> parsedMessages;
     public String DateOfToday;
     public String formattedDate;
     public String formattedTime;
@@ -46,18 +48,25 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        smsTextView = findViewById(R.id.smsTextView);
-        savebutton = findViewById(R.id.button);
+        //smsTextView = findViewById(R.id.smsTextView);
+        //savebutton = findViewById(R.id.button);
 
-        DateOfToday = "21-10-2023"; //testing date
+        DateOfToday = "25-10-2023"; //testing date
 
-        hdfcSms = readHDFCSms(DateOfToday);
-        smsTextView.setText(hdfcSms);
+        parsedMessages = readAndParseMessagesForGivenDate(DateOfToday);
 
-        savebutton.setOnClickListener(new View.OnClickListener() {
+        //smsTextView.setText(parsedMessages);
+
+        ArrayAdapter<SMS> adapter = new ArrayAdapter<>(this, R.layout.sms_item, R.id.text_view_address, parsedMessages);
+
+        // Set the adapter for the ListView
+        ListView listView = findViewById(R.id.list_view_sms);
+        listView.setAdapter(adapter);
+
+        /*savebutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                hdfcSms = readHDFCSms(DateOfToday);
+                parsedMessages = readAndParseMessagesForGivenDate(DateOfToday);
 
                 String FILE_NAME = DateOfToday ;
                 try {
@@ -91,11 +100,13 @@ public class MainActivity extends Activity {
                 }
 
             }
-        });
+        });*/
 
     }
-    private String readHDFCSms(String DateOfToday) {
+    private List<SMS> readAndParseMessagesForGivenDate(String DateOfToday) {
         try {
+            List<SMS> messages = new ArrayList<SMS>();
+
             // Construct the query for SMS messages after the threshold date
             Uri uri = Uri.parse("content://sms/inbox");
 
@@ -106,7 +117,7 @@ public class MainActivity extends Activity {
                 thresholdDate = dateFormat.parse(DateOfToday);
             } catch (ParseException e) {
                 e.printStackTrace();
-                return "";
+                return messages;
             }
 
             long thresholdTimeInMillis = thresholdDate.getTime();
@@ -135,11 +146,9 @@ public class MainActivity extends Activity {
             selectionArgs.add(String.valueOf(thresholdTimeInMillis));
             Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs.toArray(new String[0]), sortOrder);
 
-            List<SMS> messages = new ArrayList<SMS>();
+            //List<SMS> messages = new ArrayList<SMS>();
 
             if (cursor != null && cursor.moveToFirst()) {
-
-                StringBuilder hdfcSms = new StringBuilder();
 
                 do {
                     @SuppressLint("Range") String address = cursor.getString(cursor.getColumnIndex(Telephony.Sms.ADDRESS));
@@ -162,16 +171,49 @@ public class MainActivity extends Activity {
 
                         if (body.contains("ATM")) {
                             Log.d("SMS", "ATM category");
-                            messages.add(new SMS(address, "", "", "", "", "ATM"));
+                            //messages.add(new SMS(address, "", "", "", "", "ATM"));
                         } else if (body.contains("UPI")) {
                             Log.d("SMS", "UPI category");
 
-                            //parse
+                            //String message = "Dear UPI user A/C X5525 debited by 10.0 on date 25Oct23 trf to NAVIIN AGENCY Refno 366453056960. If not u? call 1800111109. -SBI";
 
-                            messages.add(new SMS(address, "", "", "", "", "UPI"));
+                            // Define the regular expressions
+                            String amountRegex = "\\b\\d+\\.\\d+\\b";
+                            String nameRegex = "to\\s([A-Z\\s]+)\\s";
+                            String dateRegex = "\\b\\d{1,2}[A-Z][a-z]{2}\\d{0,2}\\b";
+
+                            // Compile the regular expressions
+                            Pattern amountPattern = Pattern.compile(amountRegex);
+                            Pattern namePattern = Pattern.compile(nameRegex);
+                            Pattern datePattern = Pattern.compile(dateRegex);
+
+                            // Match the patterns against the message
+                            Matcher amountMatcher = amountPattern.matcher(body);
+                            Matcher nameMatcher = namePattern.matcher(body);
+                            Matcher dateMatcher = datePattern.matcher(body);
+
+                            String receiverName = "", transferredAmount = "", transferredDate = "";
+
+                            // Find and print the results
+                            if (amountMatcher.find()) {
+                                transferredAmount = amountMatcher.group();
+                                System.out.println("Amount: " + transferredAmount);
+                            }
+
+                            if (nameMatcher.find()) {
+                                receiverName = nameMatcher.group(1);
+                                System.out.println("Receiver Name: " + receiverName);
+                            }
+
+                            if (dateMatcher.find()) {
+                                transferredDate = dateMatcher.group();
+                                System.out.println("Date: " + transferredDate);
+                            }
+
+                            messages.add(new SMS(address, receiverName, transferredAmount, transferredDate, "", "UPI"));
                         } else {
                             Log.d("SMS", "General category");
-                            messages.add(new SMS(address, "", "", "", "", "General"));
+                            //messages.add(new SMS(address, "", "", "", "", "General"));
                         }
 
                         // Define a regular expression pattern to match the specific format.
@@ -198,8 +240,8 @@ public class MainActivity extends Activity {
                 Log.d("SMS", "Cusor is null");
             }
 
-            System.out.println(messages.toArray());
-            return "No HDFC Bank SMS messages found for ";
+            System.out.println(messages.size());
+            return messages;
 
         } catch (Exception e) {
             throw new RuntimeException(e);
