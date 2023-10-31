@@ -6,6 +6,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -42,8 +44,44 @@ public class MainActivity extends Activity {
 
         adapter = new SMSListAdapter(parsedMessages);
         recyclerView.setAdapter(adapter);
-
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        try {
+
+            Intent intent = getIntent();
+            String id = intent.getStringExtra("ID");
+
+            Log.d("ITEM old", ""+id);
+
+            Log.d("ITEM Before", ""+parsedMessages.size());
+
+            SMS itemToRemove = null;
+
+            for (SMS sms : parsedMessages) {
+
+                Log.d("ITEM", ""+sms.getId());
+
+                if (sms.getId().equals(id)) {
+
+                    Log.d("ITEM", "Matched");
+                    itemToRemove =  sms;
+                }
+            }
+
+            parsedMessages.remove(itemToRemove);
+
+            adapter.updateData(parsedMessages);
+
+            Log.d("Resume", id);
+        }
+        catch (Exception e){
+            Log.e("Resume", "Error while resume" + e.getMessage().toString());
+        }
+    }
+
     private List<Message> readMessages(String DateOfToday) {
         try {
             List<Message> messages = new ArrayList<Message>();

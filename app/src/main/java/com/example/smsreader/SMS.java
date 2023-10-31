@@ -8,6 +8,8 @@ public class SMS {
     String date;
     String time;
     String category;
+    Boolean isDescriptionAdded;
+    String id;
 
     public SMS(String address, String name, String amount, String date, String time, String category)
     {
@@ -17,6 +19,9 @@ public class SMS {
         this.date = date;
         this.time = time;
         this.category = category;
+        this.isDescriptionAdded = false;
+        this.id = address+date+time;
+
     }
 
     public String getAddress()
@@ -48,6 +53,10 @@ public class SMS {
     {
         return category;
     }
+
+    public Boolean getIsDescriptionAdded(){return isDescriptionAdded;}
+
+    public String getId(){return id;}
 
     @Override
     public String toString() {

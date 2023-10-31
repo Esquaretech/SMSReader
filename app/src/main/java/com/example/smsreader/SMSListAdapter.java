@@ -7,13 +7,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
 public class SMSListAdapter extends RecyclerView.Adapter<SMSListAdapter.ViewHolder> {
-    private List<SMS> smsList;
+    private static List<SMS> smsList;
 
     public SMSListAdapter(List<SMS> userList) {
         this.smsList = userList;
@@ -23,6 +22,12 @@ public class SMSListAdapter extends RecyclerView.Adapter<SMSListAdapter.ViewHold
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.sms_item, parent, false);
         return new ViewHolder(view);
+    }
+
+    public void updateData(List<SMS> newList) {
+        this.smsList = newList;
+        Log.d("ITEM After", ""+smsList.size());
+        notifyDataSetChanged(); // This notifies the adapter that the data has changed.
     }
 
     @Override
@@ -73,14 +78,27 @@ public class SMSListAdapter extends RecyclerView.Adapter<SMSListAdapter.ViewHold
 
                         Log.d("Button", "position:" + position);
 
-                        //User user = smsList.get(position);
-                        String name = "test";
-                        String email = "test1";
+                        SMS sms = smsList.get(position);
+                        String address = sms.getAddress();
+                        String name = sms.getName();
+                        String amount = sms.getAmount();
+                        String date = sms.getDate();
+                        String time = sms.getTime();
+                        String category = sms.getCategory();
+                        String id = sms.getId();
+
+
 
                         // Start UserDetailsActivity and pass selected user details
                         Intent intent = new Intent(v.getContext(), add_description_activity.class);
+                        intent.putExtra("ADDRESS", address);
                         intent.putExtra("NAME", name);
-                        intent.putExtra("EMAIL", email);
+                        intent.putExtra("AMOUNT", amount);
+                        intent.putExtra("DATE", date);
+                        intent.putExtra("TIME", time);
+                        intent.putExtra("CATEGORY", category);
+                        intent.putExtra("ID", id);
+
                         v.getContext().startActivity(intent);
                     }
                 }
