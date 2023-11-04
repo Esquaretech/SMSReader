@@ -15,7 +15,7 @@ public class SMS {
     {
         this.address = address;
         this.name = name;
-        this.amount = amount;
+        this.amount = "\u20B9 "+amount;
         this.date = date;
         this.time = time;
         this.category = category;

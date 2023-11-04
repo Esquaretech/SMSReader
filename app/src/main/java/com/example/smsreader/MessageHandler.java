@@ -34,15 +34,63 @@ public class MessageHandler {
 
                     Log.d("SMS", message.toString());
 
-                    if (message.getBody().contains("ATM")) {
+                    if (message.getBody().contains("withdrawn")) {
                         Log.d("SMS", "ATM category");
                         //messages.add(new SMS(address, "", "", "", "", "ATM"));
-                    } else if (message.getBody().contains("UPI")) {
+
+                        //Define the regular expressions
+                        String amountRegex = "\\b\\d+";
+                        String nameRegex =  "\\bAt\\b\\s*(.*?)\\s*\\bOn\\b";
+
+                        // Compile the regular expressions
+                        Pattern amountPattern = Pattern.compile(amountRegex);
+                        Pattern namePattern = Pattern.compile(nameRegex);
+
+                        // Match the patterns against the message
+                        Matcher amountMatcher = amountPattern.matcher(message.getBody());
+                        Matcher nameMatcher = namePattern.matcher(message.getBody());
+
+                        String receiverName = "", transferredAmount = "";
+
+                        // Find and print the results
+                        if (amountMatcher.find()) {
+                            transferredAmount = amountMatcher.group();
+                            System.out.println("Amount: " + transferredAmount);
+                        }
+
+                        if (nameMatcher.find()) {
+                            receiverName = nameMatcher.group(1);
+                            System.out.println("Receiver Name: " + receiverName);
+                        }
+
+                        parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "ATM"));
+                    }
+                    else if (message.getBody().contains("UPI") && !message.getBody().contains("credited") || message.getBody().contains("debited")) {
                         Log.d("SMS", "UPI category");
 
                         // Define the regular expressions
                         String amountRegex = "\\b\\d+\\.\\d+\\b";
-                        String nameRegex = "to\\s([A-Z\\s]+[a-z\\s]+)\\s";
+
+                        //Type1
+                        String nameRegex ="to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?UPI";
+                        if(nameRegex!=null){
+                            //Type2
+                            nameRegex = "to\\s([A-Z\\s]+[a-z\\s]+(.*?))(?=UPI)";
+                        } if (nameRegex == null) {
+                            //Type3
+                            nameRegex = "to\\s(.*?)(?=\\sUPI)";
+                        }
+                        //old working
+                        //String nameRegex ="to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?UPI";
+
+                        //modify
+                       // String nameRegex ="to\\s([A-Z\\s]+[a-z\\s]+(.*?))(?=UPI)";
+
+                        //only for numeric
+                       // String nameRegex = "to\\s(.*?)(?=\\sUPI)";
+
+
+
                         // Compile the regular expressions
                         Pattern amountPattern = Pattern.compile(amountRegex);
                         Pattern namePattern = Pattern.compile(nameRegex);
@@ -65,7 +113,8 @@ public class MessageHandler {
                         }
 
                         parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
-                    } else {
+                    }
+                    else {
                         Log.d("SMS", "General category");
                         //messages.add(new SMS(address, "", "", "", "", "General"));
                     }

@@ -6,8 +6,10 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import android.Manifest;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,6 +19,9 @@ import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,11 +29,29 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainActivity extends Activity {
+    private static final int PERMISSION_REQUEST_READ_SMS = 1001;
     private ArrayList<SMS> parsedMessages;
     public String dateOfToday;
     private RecyclerView recyclerView;
     private SMSListAdapter adapter;
 
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST_READ_SMS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, proceed to read messages
+                //dateOfToday = "01-11-2023";
+                dateOfToday = "24-10-2023";
+
+                List<Message> messages = readMessages(dateOfToday);
+                parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
+
+                adapter = new SMSListAdapter(parsedMessages);
+                recyclerView.setAdapter(adapter);
+            } else {
+                // Permission denied, handle accordingly (e.g., display a message, disable functionality)
+            }
+        }
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,13 +60,22 @@ public class MainActivity extends Activity {
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        dateOfToday = "28-10-2023";
 
-        List<Message> messages = readMessages(dateOfToday);
-        parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, PERMISSION_REQUEST_READ_SMS);
+        } else {
+            // Permission already granted, proceed to read messages
+           dateOfToday = "26-10-2023";
+            //dateOfToday = "24-10-2023";
 
-        adapter = new SMSListAdapter(parsedMessages);
-        recyclerView.setAdapter(adapter);
+            List<Message> messages = readMessages(dateOfToday);
+            parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
+
+            adapter = new SMSListAdapter(parsedMessages);
+            recyclerView.setAdapter(adapter);
+        }
+
+
     }
     @Override
     protected void onResume() {
@@ -110,7 +142,9 @@ public class MainActivity extends Activity {
                 add("%KVB%");
                 add("%HDFC%");
                 add("%AXIS%");
-                add("%UPI%");
+                add("%INDBNK%");
+                add("%INDIANBANK%");
+                add("%IND%");
             }};
 
             String selection = "(address LIKE ?";
@@ -137,7 +171,7 @@ public class MainActivity extends Activity {
 
                 cursor.close();
             } else {
-                Log.d("SMS", "Cusor is null");
+                Log.d("SMS", "Cursor is null");
             }
 
             System.out.println(messages.size());
