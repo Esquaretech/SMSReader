@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Locale;
 import android.Manifest;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.widget.Toast;
+
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -18,6 +22,7 @@ import android.provider.Telephony;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -34,16 +39,27 @@ public class MainActivity extends Activity {
     public String dateOfToday;
     private RecyclerView recyclerView;
     private SMSListAdapter adapter;
-
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_REQUEST_READ_SMS) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission granted, proceed to read messages
-                //dateOfToday = "01-11-2023";
-                dateOfToday = "24-10-2023";
+                dateOfToday = "01-11-2023";
 
                 List<Message> messages = readMessages(dateOfToday);
                 parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
+
+                if(parsedMessages.size()==0) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setMessage("No Messages found for this date " + dateOfToday)
+                            .setTitle("Error")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    // You can perform additional actions if needed
+                                }
+                            });
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
 
                 adapter = new SMSListAdapter(parsedMessages);
                 recyclerView.setAdapter(adapter);
@@ -60,29 +76,36 @@ public class MainActivity extends Activity {
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, PERMISSION_REQUEST_READ_SMS);
         } else {
             // Permission already granted, proceed to read messages
-           dateOfToday = "26-10-2023";
-            //dateOfToday = "24-10-2023";
+           //dateOfToday = "26-10-2023";
+            dateOfToday = "01-11-2023+";
 
             List<Message> messages = readMessages(dateOfToday);
             parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
 
+            if(parsedMessages.size()==0){
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("No Messages found for this date "+ dateOfToday)
+                        .setTitle("Error")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                // You can perform additional actions if needed
+                            }
+                        });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
             adapter = new SMSListAdapter(parsedMessages);
             recyclerView.setAdapter(adapter);
         }
-
-
     }
     @Override
     protected void onResume() {
         super.onResume();
-
         try {
-
             Intent intent = getIntent();
             String id = intent.getStringExtra("ID");
 
@@ -102,7 +125,6 @@ public class MainActivity extends Activity {
                     itemToRemove =  sms;
                 }
             }
-
             parsedMessages.remove(itemToRemove);
 
             adapter.updateData(parsedMessages);
@@ -110,10 +132,10 @@ public class MainActivity extends Activity {
             Log.d("Resume", id);
         }
         catch (Exception e){
-            Log.e("Resume", "Error while resume" + e.getMessage().toString());
+
+            Log.e("Resume", "Error while resume " + e.getMessage().toString());
         }
     }
-
     private List<Message> readMessages(String DateOfToday) {
         try {
             List<Message> messages = new ArrayList<Message>();
@@ -129,7 +151,6 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
                 return messages;
             }
-
             long thresholdTimeInMillis = thresholdDate.getTime();
 
             String[] projection = null;
@@ -146,7 +167,6 @@ public class MainActivity extends Activity {
                 add("%INDIANBANK%");
                 add("%IND%");
             }};
-
             String selection = "(address LIKE ?";
 
             for (int i = 1; i < selectionArgs.size(); i++) {
@@ -159,7 +179,6 @@ public class MainActivity extends Activity {
             Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs.toArray(new String[0]), sortOrder);
 
             if (cursor != null && cursor.moveToFirst()) {
-
                 do {
                     @SuppressLint("Range") String address = cursor.getString(cursor.getColumnIndex(Telephony.Sms.ADDRESS));
                     @SuppressLint("Range") String body = cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY));
@@ -168,15 +187,14 @@ public class MainActivity extends Activity {
                     messages.add(new Message(address, body, date));
 
                 } while (cursor.moveToNext());
-
                 cursor.close();
-            } else {
+            }
+            else {
                 Log.d("SMS", "Cursor is null");
             }
 
             System.out.println(messages.size());
             return messages;
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

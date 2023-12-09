@@ -1,6 +1,14 @@
 package com.example.smsreader;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.util.Log;
+import android.widget.Toast;
+
+import android.content.Context;
+import android.widget.Toast;
+import android.util.Log;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,9 +22,7 @@ public class MessageHandler {
     public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate) {
 
         ArrayList<SMS> parsedMessages = new ArrayList<SMS>();
-
         try {
-
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
 
             String timeFormat = "h:mm a"; // Define the desired time format
@@ -30,7 +36,8 @@ public class MessageHandler {
 
                 Log.d("SMS", "formatted date is " + formattedDate);
 
-                if (formattedDate.equals(expectedDate)) {
+
+//                if (formattedDate.equals(expectedDate)) {
 
                     Log.d("SMS", message.toString());
 
@@ -57,75 +64,66 @@ public class MessageHandler {
                             transferredAmount = amountMatcher.group();
                             System.out.println("Amount: " + transferredAmount);
                         }
-
                         if (nameMatcher.find()) {
                             receiverName = nameMatcher.group(1);
                             System.out.println("Receiver Name: " + receiverName);
                         }
-
                         parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "ATM"));
                     }
-                    else if (message.getBody().contains("UPI") && !message.getBody().contains("credited") || message.getBody().contains("debited")) {
+                    else if (message.getBody().contains("UPI") && !message.getBody().contains("timed out") && !message.getBody().contains("requested") &&  !message.getBody().contains("T&C") && !message.getBody().contains("credited") || message.getBody().contains("debited")) {
                         Log.d("SMS", "UPI category");
 
-                        // Define the regular expressions
-                        String amountRegex = "\\b\\d+\\.\\d+\\b";
-
-                        //Type1
-                        String nameRegex ="to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?UPI";
-                        if(nameRegex!=null){
-                            //Type2
-                            nameRegex = "to\\s([A-Z\\s]+[a-z\\s]+(.*?))(?=UPI)";
-                        } if (nameRegex == null) {
-                            //Type3
-                            nameRegex = "to\\s(.*?)(?=\\sUPI)";
-                        }
-                        //old working
-                        //String nameRegex ="to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?UPI";
-
-                        //modify
-                       // String nameRegex ="to\\s([A-Z\\s]+[a-z\\s]+(.*?))(?=UPI)";
-
-                        //only for numeric
-                       // String nameRegex = "to\\s(.*?)(?=\\sUPI)";
-
-
-
-                        // Compile the regular expressions
+                        // Compile the regular expression for amount
+                        String amountRegex = "\\d+\\.\\d+";
                         Pattern amountPattern = Pattern.compile(amountRegex);
-                        Pattern namePattern = Pattern.compile(nameRegex);
 
-                        // Match the patterns against the message
+                        // Match the amount pattern against the message
                         Matcher amountMatcher = amountPattern.matcher(message.getBody());
-                        Matcher nameMatcher = namePattern.matcher(message.getBody());
 
-                        String receiverName = "", transferredAmount = "";
-
-                        // Find and print the results
+                        String transferredAmount = "";
+                        // Find and print the amount result
                         if (amountMatcher.find()) {
                             transferredAmount = amountMatcher.group();
                             System.out.println("Amount: " + transferredAmount);
                         }
+                        List<String> nameRegexs = new ArrayList<String>() {
+                            {
+                                add("to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?UPI");
+                                add("to\\s([A-Z\\s]+[a-z\\s]+(.*?))(?=UPI)");
+                                add("to\\s(.*?)(?=\\sUPI)");
+                                add("to\\s*a/c\\s*\\*\\*(\\d+)");
+                            }
+                        };
+                        // Iterate over the list of name regex patterns
+                        String receiverName = "";
+                        for (String nameRegex : nameRegexs) {
+                            // Compile the current name regex pattern
+                            Pattern namePattern = Pattern.compile(nameRegex);
 
-                        if (nameMatcher.find()) {
-                            receiverName = nameMatcher.group(1);
-                            System.out.println("Receiver Name: " + receiverName);
+                            // Match the name pattern against the message
+                            Matcher nameMatcher = namePattern.matcher(message.getBody());
+
+                            // If a match is found, print the result and break the loop
+                            if (nameMatcher.find()) {
+                                receiverName = nameMatcher.group(0);
+                                System.out.println("Receiver Name: " + receiverName);
+                                break;
+                            }
                         }
-
                         parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
                     }
                     else {
                         Log.d("SMS", "General category");
                         //messages.add(new SMS(address, "", "", "", "", "General"));
                     }
-                } else{
-                    Log.d("SMS", message.getDate() + "is not match with " + formattedDate);
-                }
+//                } else{
+//
+//                    Log.d("SMS", message.getDate() + " is not match with " + formattedDate);
+//                }
             }
         } catch (Exception ex) {
             Log.d("Parser", ex.getMessage());
         }
-
         return parsedMessages;
     }
 }
