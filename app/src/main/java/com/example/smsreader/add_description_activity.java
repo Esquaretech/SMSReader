@@ -14,12 +14,16 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 public class add_description_activity extends AppCompatActivity {
-public String jsonData;
+    public String jsonData;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_description);
@@ -55,25 +59,42 @@ public String jsonData;
             public void onClick(View v) {
                 String Description = editTextDescription.getText().toString();
 
-                String FILE_NAME = date;
                 try {
                     JSONObject jsonObject = new JSONObject();
-
-                    jsonObject.put("Date", address);
+                    jsonObject.put("Id", id);
+                    jsonObject.put("Address", address);
                     jsonObject.put("Receiver", name);
                     jsonObject.put("Amount", amount);
                     jsonObject.put("Date", date);
                     jsonObject.put("Time", time);
                     jsonObject.put("Description", Description);
+                    jsonObject.put("Category", category);
 
                     jsonData = jsonObject.toString();
 
-                    String filePath = "/storage/emulated/0/Download/" + FILE_NAME + ".json";
+                    //String filePath = "/storage/emulated/0/Download/sms_reader_data.json";
 
-                    FileOutputStream fos = new FileOutputStream(filePath, true);
-                    fos.write(jsonData.getBytes());
-                    fos.close();
+                    File jsonFile = new File("/storage/emulated/0/Download/", "sms_reader_data.json");
 
+                    // Check if the file already exists
+                    if (!jsonFile.exists()) {
+                        try {
+                            Log.d("File", "Not exist");
+                            FileWriter fileWriter = new FileWriter(jsonFile);
+                            fileWriter.write(jsonData);
+                            fileWriter.close();
+                        } catch (IOException e) {
+                            Log.d("File ", e.getMessage());
+                        }
+                    }
+                    else {
+
+                        Log.d("File", "exist");
+
+                        FileOutputStream fos = new FileOutputStream(jsonFile, true);
+                        fos.write(jsonData.getBytes());
+                        fos.close();
+                    }
 
                     Toast.makeText(getApplicationContext(), "Data saved to Downloads directory", Toast.LENGTH_LONG).show();
 
@@ -81,13 +102,11 @@ public String jsonData;
                     intent.putExtra("ID", id);
                     v.getContext().startActivity(intent);
 
-
-            }
-                catch (Exception e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e.getMessage().toString());
                 }
 
-                Log.d("Button", "position:"+ Description);
+                Log.d("Button", "position:" + Description);
             }
         });
     }

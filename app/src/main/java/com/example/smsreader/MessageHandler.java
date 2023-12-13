@@ -19,10 +19,33 @@ import java.util.regex.Pattern;
 
 public class MessageHandler {
 
-    public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate) {
+    private static boolean isIdInList(List<SMS> smsList, String targetId) {
+
+        if(smsList.size() > 0) {
+            for (SMS sms : smsList) {
+                System.out.println("TargetId " + targetId);
+                if (sms.getId().contains(targetId)) {
+
+                    System.out.println("Entry found " + targetId);
+
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            System.out.println("No entry in stored message");
+            return false;
+        }
+    }
+
+    public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate, List<SMS> storedMessage) {
 
         ArrayList<SMS> parsedMessages = new ArrayList<SMS>();
         try {
+
+            System.out.println("StoredMessage count " + storedMessage.size());
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
 
             String timeFormat = "h:mm a"; // Define the desired time format
@@ -35,7 +58,6 @@ public class MessageHandler {
                 String formattedTime = timeFormatter.format(new Date(Long.parseLong(message.getDate())));
 
                 Log.d("SMS", "formatted date is " + formattedDate);
-
 
 //                if (formattedDate.equals(expectedDate)) {
 
@@ -68,9 +90,17 @@ public class MessageHandler {
                             receiverName = nameMatcher.group(1);
                             System.out.println("Receiver Name: " + receiverName);
                         }
-                        parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "ATM"));
+
+                        String id = message.getHeader() + formattedDate + formattedTime;
+                        if(!isIdInList(storedMessage, id))
+                            parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "ATM"));
                     }
-                    else if (message.getBody().contains("UPI") && !message.getBody().contains("timed out") && !message.getBody().contains("requested") &&  !message.getBody().contains("T&C") && !message.getBody().contains("credited") || message.getBody().contains("debited")) {
+                    else if (message.getBody().contains("UPI")
+                            && !message.getBody().contains("timed out")
+                            && !message.getBody().contains("requested")
+                            && !message.getBody().contains("T&C")
+                            && !message.getBody().contains("credited")
+                            || message.getBody().contains("debited")) {
                         Log.d("SMS", "UPI category");
 
                         // Compile the regular expression for amount
@@ -90,6 +120,7 @@ public class MessageHandler {
                             {
                                 add("to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?UPI");
                                 add("to\\s([A-Z\\s]+[a-z\\s]+(.*?))(?=UPI)");
+                                add("to\\s([A-Z\\s]+[a-z\\s]+(.*?))\\s?Refno");
                                 add("to\\s(.*?)(?=\\sUPI)");
                                 add("to\\s*a/c\\s*\\*\\*(\\d+)");
                             }
@@ -105,12 +136,20 @@ public class MessageHandler {
 
                             // If a match is found, print the result and break the loop
                             if (nameMatcher.find()) {
-                                receiverName = nameMatcher.group(0);
+                                receiverName = nameMatcher.group(1);
                                 System.out.println("Receiver Name: " + receiverName);
+                                System.out.println("Receiver Name-" + nameMatcher.group(1));
                                 break;
                             }
+
+                            else {
+                                Log.d("Name not matched", message.getBody());
+                            }
                         }
-                        parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
+
+                        String id = message.getHeader() + formattedDate + formattedTime;
+                        if(!isIdInList(storedMessage, id))
+                            parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
                     }
                     else {
                         Log.d("SMS", "General category");

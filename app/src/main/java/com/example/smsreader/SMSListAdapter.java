@@ -73,7 +73,7 @@ public class SMSListAdapter extends RecyclerView.Adapter<SMSListAdapter.ViewHold
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
                         // Perform your action here, for example:
-                        //SMS sms = smsList.get(position);
+                        // SMS sms = smsList.get(position);
                         // Do something with user data
 
                         Log.d("Button", "position:" + position);
@@ -86,8 +86,6 @@ public class SMSListAdapter extends RecyclerView.Adapter<SMSListAdapter.ViewHold
                         String time = sms.getTime();
                         String category = sms.getCategory();
                         String id = sms.getId();
-
-
 
                         // Start UserDetailsActivity and pass selected user details
                         Intent intent = new Intent(v.getContext(), add_description_activity.class);

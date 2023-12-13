@@ -2,9 +2,17 @@ package com.example.smsreader;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import android.Manifest;
 
@@ -25,10 +33,14 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,6 +48,7 @@ import java.util.Date;
 public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST_READ_SMS = 1001;
     private ArrayList<SMS> parsedMessages;
+    private List<SMS> storedMessage;
     public String dateOfToday;
     private RecyclerView recyclerView;
     private SMSListAdapter adapter;
@@ -45,8 +58,9 @@ public class MainActivity extends Activity {
                 // Permission granted, proceed to read messages
                 dateOfToday = "01-11-2023";
 
+                storedMessage = readStoredMessages();
                 List<Message> messages = readMessages(dateOfToday);
-                parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
+                parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessage);
 
                 if(parsedMessages.size()==0) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -81,10 +95,11 @@ public class MainActivity extends Activity {
         } else {
             // Permission already granted, proceed to read messages
            //dateOfToday = "26-10-2023";
-            dateOfToday = "01-11-2023+";
 
+            dateOfToday = "01-11-2023";
+            storedMessage = readStoredMessages();
             List<Message> messages = readMessages(dateOfToday);
-            parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday);
+            parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessage);
 
             if(parsedMessages.size()==0){
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -106,36 +121,100 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         try {
+
+            storedMessage = readStoredMessages();
+
             Intent intent = getIntent();
             String id = intent.getStringExtra("ID");
 
-            Log.d("ITEM old", ""+id);
+            if(id != null) {
 
-            Log.d("ITEM Before", ""+parsedMessages.size());
+                Log.d("ITEM old", "" + id);
 
-            SMS itemToRemove = null;
+                Log.d("ITEM Before", "" + parsedMessages.size());
 
-            for (SMS sms : parsedMessages) {
+                SMS itemToRemove = null;
 
-                Log.d("ITEM", ""+sms.getId());
+                for (SMS sms : parsedMessages) {
 
-                if (sms.getId().equals(id)) {
+                    Log.d("ITEM", "" + sms.getId());
 
-                    Log.d("ITEM", "Matched");
-                    itemToRemove =  sms;
+                    if (sms.getId().equals(id)) {
+
+                        Log.d("ITEM", "Matched");
+                        itemToRemove = sms;
+                    }
                 }
+                parsedMessages.remove(itemToRemove);
+
+                adapter.updateData(parsedMessages);
+
+                Log.d("Resume", id);
             }
-            parsedMessages.remove(itemToRemove);
-
-            adapter.updateData(parsedMessages);
-
-            Log.d("Resume", id);
         }
         catch (Exception e){
 
             Log.e("Resume", "Error while resume " + e.getMessage().toString());
         }
     }
+
+    private List<SMS> readStoredMessages()
+    {
+        try {
+
+            ArrayList<SMS> storedMessages = new ArrayList<SMS>();
+            // Replace this path with the actual path where you store your JSON files
+
+            String FILE_NAME = "sms_reader_data.json";
+            String filePath = "/storage/emulated/0/Download/" + FILE_NAME;
+
+            // Iterate through files in the directory
+            File file = new File(filePath);
+
+            if (file.isFile()) {
+                // Read JSON data from the file
+                StringBuilder jsonData = new StringBuilder();
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    jsonData.append(line);
+                }
+                reader.close();
+
+                // Parse JSON data and create SMS object
+                JSONObject jsonObject = new JSONObject(jsonData.toString());
+                String id = jsonObject.getString("Id");
+                String address = jsonObject.getString("Address");
+                String name = jsonObject.getString("Receiver");
+                String amount = jsonObject.getString("Amount");
+                String date = jsonObject.getString("Date");
+                String time = jsonObject.getString("Time");
+                String description = jsonObject.getString("Description");
+                String category = jsonObject.getString("Category");
+
+                SMS storedSMS = new SMS(address, name, amount, date, time, category);
+                storedSMS.id = id;
+                storedSMS.description = description;
+                storedMessages.add(storedSMS);
+
+                // Print each stored SMS in log
+                Log.d("StoredMessages", "Stored SMS: " + storedSMS.toString());
+
+            }
+            else {
+                System.out.println("No file found");
+            }
+            return storedMessages;
+        }
+        catch (Exception ex)
+        {
+            System.out.println("Error while parsing stored messages. " + ex.getMessage());
+
+            return null;
+        }
+    }
+
+
     private List<Message> readMessages(String DateOfToday) {
         try {
             List<Message> messages = new ArrayList<Message>();
@@ -146,7 +225,9 @@ public class MainActivity extends Activity {
             Date thresholdDate;
 
             try {
+                System.out.println("Date parse");
                 thresholdDate = dateFormat.parse(DateOfToday);
+                System.out.println("Date parse after" + thresholdDate.toString());
             } catch (ParseException e) {
                 e.printStackTrace();
                 return messages;

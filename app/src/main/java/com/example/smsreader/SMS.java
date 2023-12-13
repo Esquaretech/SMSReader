@@ -8,6 +8,8 @@ public class SMS {
     String date;
     String time;
     String category;
+
+    String description;
     Boolean isDescriptionAdded;
     String id;
 
@@ -52,6 +54,16 @@ public class SMS {
     public String getCategory()
     {
         return category;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String value)
+    {
+        description = value;
     }
 
     public Boolean getIsDescriptionAdded(){return isDescriptionAdded;}
