@@ -148,6 +148,7 @@ public class MessageHandler {
                         }
 
                         String id = message.getHeader() + formattedDate + formattedTime;
+
                         if(!isIdInList(storedMessage, id))
                             parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
                     }

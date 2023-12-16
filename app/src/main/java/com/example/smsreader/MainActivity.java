@@ -5,6 +5,7 @@ import android.app.Activity;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
@@ -18,6 +19,8 @@ import android.Manifest;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.os.Build;
+import android.os.Environment;
 import android.widget.Toast;
 
 import android.content.Intent;
@@ -55,8 +58,12 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_REQUEST_READ_SMS) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted, proceed to read messages
+
+                //Demo date for testing purpose
                 dateOfToday = "01-11-2023";
+
+                //Requesting Permission for Read/Write at device storage
+                requestWritePermission();
 
                 storedMessage = readStoredMessages();
                 List<Message> messages = readMessages(dateOfToday);
@@ -93,10 +100,12 @@ public class MainActivity extends Activity {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, PERMISSION_REQUEST_READ_SMS);
         } else {
-            // Permission already granted, proceed to read messages
-           //dateOfToday = "26-10-2023";
-
+            //Demo date for testing purpose
             dateOfToday = "01-11-2023";
+
+            //Requesting Permission for Read/Write at device storage
+            requestWritePermission();
+
             storedMessage = readStoredMessages();
             List<Message> messages = readMessages(dateOfToday);
             parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessage);
@@ -165,16 +174,20 @@ public class MainActivity extends Activity {
             ArrayList<SMS> storedMessages = new ArrayList<SMS>();
             // Replace this path with the actual path where you store your JSON files
 
-            String FILE_NAME = "sms_reader_data.json";
-            String filePath = "/storage/emulated/0/Download/" + FILE_NAME;
+            File downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+            String fileName = "sms_reader_data.json";
 
             // Iterate through files in the directory
-            File file = new File(filePath);
-
-            if (file.isFile()) {
-                // Read JSON data from the file
-                StringBuilder jsonData = new StringBuilder();
+            File file = new File(downloadsDirectory, fileName);
+            try {
+                // Create the file if it doesn't exist
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
                 BufferedReader reader = new BufferedReader(new FileReader(file));
+                StringBuilder jsonData = new StringBuilder();
+
                 String line;
                 while ((line = reader.readLine()) != null) {
                     jsonData.append(line);
@@ -198,12 +211,16 @@ public class MainActivity extends Activity {
                 storedMessages.add(storedSMS);
 
                 // Print each stored SMS in log
-                Log.d("StoredMessages", "Stored SMS: " + storedSMS.toString());
+                //Log.d("StoredMessages", "Stored SMS: " + storedSMS.toString());
+                for (SMS sms: storedMessages ) {
+                   // System.out.print(sms);
+                    Log.d("StoredMessages", "Stored message: " + sms);
+                }
 
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            else {
-                System.out.println("No file found");
-            }
+
             return storedMessages;
         }
         catch (Exception ex)
@@ -213,7 +230,11 @@ public class MainActivity extends Activity {
             return null;
         }
     }
-
+    private void requestWritePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
+    }
 
     private List<Message> readMessages(String DateOfToday) {
         try {

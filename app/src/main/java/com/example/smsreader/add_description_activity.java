@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -72,29 +73,31 @@ public class add_description_activity extends AppCompatActivity {
 
                     jsonData = jsonObject.toString();
 
-                    //String filePath = "/storage/emulated/0/Download/sms_reader_data.json";
+                    File downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 
-                    File jsonFile = new File("/storage/emulated/0/Download/", "sms_reader_data.json");
+                    String fileName = "sms_reader_data.json";
+
+                    // Create the file object
+                    File file = new File(downloadsDirectory, fileName);
 
                     // Check if the file already exists
-                    if (!jsonFile.exists()) {
-                        try {
-                            Log.d("File", "Not exist");
-                            FileWriter fileWriter = new FileWriter(jsonFile);
-                            fileWriter.write(jsonData);
-                            fileWriter.close();
-                        } catch (IOException e) {
-                            Log.d("File ", e.getMessage());
+                    try {
+                        // Create the file if it doesn't exist
+                        if (!file.exists()) {
+                            file.createNewFile();
                         }
-                    }
-                    else {
 
-                        Log.d("File", "exist");
+                        // Write JSON content to the file
+                        FileOutputStream outputStream = new FileOutputStream(file);
+                        outputStream.write("\n".getBytes());
+                        outputStream.write(jsonData.getBytes());
+                        outputStream.write("\n".getBytes()); // Add a newline separator
+                        outputStream.close();
 
-                        FileOutputStream fos = new FileOutputStream(jsonFile, true);
-                        fos.write(jsonData.getBytes());
-                        fos.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+
 
                     Toast.makeText(getApplicationContext(), "Data saved to Downloads directory", Toast.LENGTH_LONG).show();
 
