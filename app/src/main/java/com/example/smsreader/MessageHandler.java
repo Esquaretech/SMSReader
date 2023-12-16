@@ -22,6 +22,7 @@ public class MessageHandler {
     private static boolean isIdInList(List<SMS> smsList, String targetId) {
 
         if(smsList.size() > 0) {
+            System.out.println("isIdInList Called");
             for (SMS sms : smsList) {
                 System.out.println("TargetId " + targetId);
                 if (sms.getId().contains(targetId)) {
@@ -40,12 +41,12 @@ public class MessageHandler {
         }
     }
 
-    public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate, List<SMS> storedMessage) {
+    public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate, List<SMS> storedMessages) {
 
         ArrayList<SMS> parsedMessages = new ArrayList<SMS>();
         try {
 
-            System.out.println("StoredMessage count " + storedMessage.size());
+            System.out.println("StoredMessages count " + storedMessages.size());
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
 
             String timeFormat = "h:mm a"; // Define the desired time format
@@ -92,7 +93,9 @@ public class MessageHandler {
                         }
 
                         String id = message.getHeader() + formattedDate + formattedTime;
-                        if(!isIdInList(storedMessage, id))
+                        System.out.print("ID inside inbox messages (ATM transactions)"+id);
+
+                        if(!isIdInList(storedMessages, id))
                             parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "ATM"));
                     }
                     else if (message.getBody().contains("UPI")
@@ -100,6 +103,7 @@ public class MessageHandler {
                             && !message.getBody().contains("requested")
                             && !message.getBody().contains("T&C")
                             && !message.getBody().contains("credited")
+                            && !message.getBody().contains("fraud transaction")
                             || message.getBody().contains("debited")) {
                         Log.d("SMS", "UPI category");
 
@@ -148,8 +152,10 @@ public class MessageHandler {
                         }
 
                         String id = message.getHeader() + formattedDate + formattedTime;
+                        System.out.print("ID inside inbox messages (UPI transactions)"+id);
+                        System.out.print("ID inside stored messages (UPI transactions)"+storedMessages.size());
 
-                        if(!isIdInList(storedMessage, id))
+                        if(!isIdInList(storedMessages, id))
                             parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
                     }
                     else {

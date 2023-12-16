@@ -82,29 +82,28 @@ public class add_description_activity extends AppCompatActivity {
 
                     // Check if the file already exists
                     try {
-                        Log.d("add description activity", "file not exist" );
+
                         // Create the file if it doesn't exist
                         if (!file.exists()) {
+                            Log.d("add description activity", "file not exist" );
                             file.createNewFile();
                         }
                         else {
                             Log.d("add description activity", "file  exist" );
                             // Write JSON array to the file
-                            FileWriter fileWriter = new FileWriter(file);
+                            FileWriter fileWriter = new FileWriter(file, true);
                             fileWriter.write(jsonData.toString());
                             fileWriter.close();
                             Log.d("JsonFileWriter", "JSON array written to file: " + file.getAbsolutePath());
+                            Toast.makeText(getApplicationContext(), "Data saved to Downloads directory", Toast.LENGTH_LONG).show();
+
+                            Intent intent = new Intent(v.getContext(), MainActivity.class);
+                            intent.putExtra("ID", id);
+                            v.getContext().startActivity(intent);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
-
-                    Toast.makeText(getApplicationContext(), "Data saved to Downloads directory", Toast.LENGTH_LONG).show();
-
-                    Intent intent = new Intent(v.getContext(), MainActivity.class);
-                    intent.putExtra("ID", id);
-                    v.getContext().startActivity(intent);
 
                 } catch (Exception e) {
                     throw new RuntimeException(e.getMessage().toString());

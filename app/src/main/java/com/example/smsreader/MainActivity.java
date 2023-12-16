@@ -52,7 +52,7 @@ import java.util.Date;
 public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST_READ_SMS = 1001;
     private ArrayList<SMS> parsedMessages;
-    private List<SMS> storedMessage;
+    private List<SMS> storedMessages;
     public String dateOfToday;
     private RecyclerView recyclerView;
     private SMSListAdapter adapter;
@@ -66,9 +66,9 @@ public class MainActivity extends Activity {
                 //Requesting Permission for Read/Write at device storage
                 requestWritePermission();
 
-                storedMessage = readStoredMessages();
+                storedMessages = readStoredMessages();
                 List<Message> messages = readMessages(dateOfToday);
-                parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessage);
+                parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessages);
 
                 if(parsedMessages.size()==0) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -107,9 +107,9 @@ public class MainActivity extends Activity {
             //Requesting Permission for Read/Write at device storage
             requestWritePermission();
 
-            storedMessage = readStoredMessages();
+            storedMessages = readStoredMessages();
             List<Message> messages = readMessages(dateOfToday);
-            parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessage);
+            parsedMessages = new MessageHandler().ParseMessage(messages, dateOfToday, storedMessages);
 
             if(parsedMessages.size()==0){
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -132,7 +132,7 @@ public class MainActivity extends Activity {
         super.onResume();
         try {
 
-            storedMessage = readStoredMessages();
+            storedMessages = readStoredMessages();
 
             Intent intent = getIntent();
             String id = intent.getStringExtra("ID");
@@ -153,6 +153,7 @@ public class MainActivity extends Activity {
 
                         Log.d("ITEM", "Matched");
                         itemToRemove = sms;
+                        Log.d("to remove", itemToRemove.id);
                     }
                 }
                 parsedMessages.remove(itemToRemove);
@@ -201,11 +202,11 @@ public class MainActivity extends Activity {
                         System.out.print("json data empty in main activity");
                         return storedMessages;
                     }
+                    try {
+                        JSONObject jsonObject = new JSONObject(jsonData.toString());
 
-                    // Parse JSON array and create SMS objects
-                    JSONArray jsonArray = new JSONArray(jsonData.toString());
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        Log.d("StoredMessages", "Stored JSON: " + jsonData.toString());
+
                         String id = jsonObject.getString("Id");
                         String address = jsonObject.getString("Address");
                         String name = jsonObject.getString("Receiver");
@@ -221,12 +222,18 @@ public class MainActivity extends Activity {
                         storedMessages.add(storedSMS);
 
                         // Print each stored SMS in log
-                        Log.d("StoredMessages", "Stored message: " + storedSMS);
+                        //Log.d("StoredMessages", "Stored message: " + storedSMS);
+
+
+                    } catch (JSONException e) {
+                        Log.e("readStoredMessages", "Error while parsing JSON array: " + e.getMessage());
+                        e.printStackTrace();
                     }
-                } catch (IOException | JSONException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+
 
             return storedMessages;
         } catch (Exception ex) {
