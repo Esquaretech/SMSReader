@@ -82,18 +82,19 @@ public class add_description_activity extends AppCompatActivity {
 
                     // Check if the file already exists
                     try {
+                        Log.d("add description activity", "file not exist" );
                         // Create the file if it doesn't exist
                         if (!file.exists()) {
                             file.createNewFile();
                         }
-
-                        // Write JSON content to the file
-                        FileOutputStream outputStream = new FileOutputStream(file);
-                        outputStream.write("\n".getBytes());
-                        outputStream.write(jsonData.getBytes());
-                        outputStream.write("\n".getBytes()); // Add a newline separator
-                        outputStream.close();
-
+                        else {
+                            Log.d("add description activity", "file  exist" );
+                            // Write JSON array to the file
+                            FileWriter fileWriter = new FileWriter(file);
+                            fileWriter.write(jsonData.toString());
+                            fileWriter.close();
+                            Log.d("JsonFileWriter", "JSON array written to file: " + file.getAbsolutePath());
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

@@ -42,6 +42,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -167,69 +168,73 @@ public class MainActivity extends Activity {
         }
     }
 
-    private List<SMS> readStoredMessages()
-    {
+    private List<SMS> readStoredMessages() {
         try {
-
-            ArrayList<SMS> storedMessages = new ArrayList<SMS>();
-            // Replace this path with the actual path where you store your JSON files
+            ArrayList<SMS> storedMessages = new ArrayList<>();
 
             File downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
             String fileName = "sms_reader_data.json";
 
-            // Iterate through files in the directory
             File file = new File(downloadsDirectory, fileName);
-            try {
-                // Create the file if it doesn't exist
-                if (!file.exists()) {
-                    file.createNewFile();
+
+            // Check if the file exists
+            if (!file.exists()) {
+                Log.d("Main activity", "file not exist" );
+                // If the file doesn't exist, create an empty file
+                file.createNewFile();
+            } else {
+                // If the file exists, read its content
+                Log.d("Main activity", "file  exists" );
+                try {
+                    // Read content from the file
+                    BufferedReader reader = new BufferedReader(new FileReader(file));
+                    StringBuilder jsonData = new StringBuilder();
+                    String line;
+
+                    while ((line = reader.readLine()) != null) {
+                        jsonData.append(line);
+                    }
+                    reader.close();
+
+                    // If the file was empty or did not contain valid JSON, return an empty list
+                    if (jsonData.length() == 0) {
+                        System.out.print("json data empty in main activity");
+                        return storedMessages;
+                    }
+
+                    // Parse JSON array and create SMS objects
+                    JSONArray jsonArray = new JSONArray(jsonData.toString());
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        String id = jsonObject.getString("Id");
+                        String address = jsonObject.getString("Address");
+                        String name = jsonObject.getString("Receiver");
+                        String amount = jsonObject.getString("Amount");
+                        String date = jsonObject.getString("Date");
+                        String time = jsonObject.getString("Time");
+                        String description = jsonObject.getString("Description");
+                        String category = jsonObject.getString("Category");
+
+                        SMS storedSMS = new SMS(address, name, amount, date, time, category);
+                        storedSMS.id = id;
+                        storedSMS.description = description;
+                        storedMessages.add(storedSMS);
+
+                        // Print each stored SMS in log
+                        Log.d("StoredMessages", "Stored message: " + storedSMS);
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
                 }
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                StringBuilder jsonData = new StringBuilder();
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    jsonData.append(line);
-                }
-                reader.close();
-
-                // Parse JSON data and create SMS object
-                JSONObject jsonObject = new JSONObject(jsonData.toString());
-                String id = jsonObject.getString("Id");
-                String address = jsonObject.getString("Address");
-                String name = jsonObject.getString("Receiver");
-                String amount = jsonObject.getString("Amount");
-                String date = jsonObject.getString("Date");
-                String time = jsonObject.getString("Time");
-                String description = jsonObject.getString("Description");
-                String category = jsonObject.getString("Category");
-
-                SMS storedSMS = new SMS(address, name, amount, date, time, category);
-                storedSMS.id = id;
-                storedSMS.description = description;
-                storedMessages.add(storedSMS);
-
-                // Print each stored SMS in log
-                //Log.d("StoredMessages", "Stored SMS: " + storedSMS.toString());
-                for (SMS sms: storedMessages ) {
-                   // System.out.print(sms);
-                    Log.d("StoredMessages", "Stored message: " + sms);
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
             return storedMessages;
-        }
-        catch (Exception ex)
-        {
-            System.out.println("Error while parsing stored messages. " + ex.getMessage());
-
+        } catch (Exception ex) {
+            Log.e("ReadStoredMessages", "Error while parsing stored messages. " + ex.getMessage());
             return null;
         }
     }
+
     private void requestWritePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
