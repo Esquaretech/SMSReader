@@ -5,15 +5,11 @@ import android.app.Activity;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import android.Manifest;
 
@@ -21,7 +17,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Environment;
-import android.widget.Toast;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -31,12 +26,8 @@ import android.os.Bundle;
 import android.provider.Telephony;
 
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -52,7 +43,7 @@ import java.util.Date;
 public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST_READ_SMS = 1001;
     private ArrayList<SMS> parsedMessages;
-    private List<SMS> storedMessages;
+    private ArrayList<SMS> storedMessages;
     public String dateOfToday;
     private RecyclerView recyclerView;
     private SMSListAdapter adapter;
@@ -131,7 +122,6 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         try {
-
             storedMessages = readStoredMessages();
 
             Intent intent = getIntent();
@@ -168,8 +158,7 @@ public class MainActivity extends Activity {
             Log.e("Resume", "Error while resume " + e.getMessage().toString());
         }
     }
-
-    private List<SMS> readStoredMessages() {
+    private ArrayList<SMS> readStoredMessages() {
         try {
             ArrayList<SMS> storedMessages = new ArrayList<>();
 
@@ -203,26 +192,31 @@ public class MainActivity extends Activity {
                         return storedMessages;
                     }
                     try {
-                        JSONObject jsonObject = new JSONObject(jsonData.toString());
+                        System.out.print("Length of json data in stored device "+jsonData.length());
 
-                        Log.d("StoredMessages", "Stored JSON: " + jsonData.toString());
+                        String jsonArrayString = "[" + jsonData.toString() + "]";
+                        JSONArray jsonArray = new JSONArray(jsonArrayString);
 
-                        String id = jsonObject.getString("Id");
-                        String address = jsonObject.getString("Address");
-                        String name = jsonObject.getString("Receiver");
-                        String amount = jsonObject.getString("Amount");
-                        String date = jsonObject.getString("Date");
-                        String time = jsonObject.getString("Time");
-                        String description = jsonObject.getString("Description");
-                        String category = jsonObject.getString("Category");
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-                        SMS storedSMS = new SMS(address, name, amount, date, time, category);
-                        storedSMS.id = id;
-                        storedSMS.description = description;
-                        storedMessages.add(storedSMS);
+                            Log.d("StoredMessages", "Stored JSON: " + jsonArray.getJSONObject(i));
 
-                        // Print each stored SMS in log
-                        //Log.d("StoredMessages", "Stored message: " + storedSMS);
+                            String id = jsonObject.getString("Id");
+                            String address = jsonObject.getString("Address");
+                            String name = jsonObject.getString("Receiver");
+                            String amount = jsonObject.getString("Amount");
+                            String date = jsonObject.getString("Date");
+                            String time = jsonObject.getString("Time");
+                            String description = jsonObject.getString("Description");
+                            String category = jsonObject.getString("Category");
+
+                            SMS storedSMS = new SMS(address, name, amount, date, time, category);
+                            storedSMS.id = id;
+                            storedSMS.description = description;
+                            storedMessages.add(storedSMS);
+
+                        }
 
 
                     } catch (JSONException e) {
@@ -233,15 +227,13 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
             }
-
-
+            System.out.println("StoredMessages count in main activity " + storedMessages.size());
             return storedMessages;
         } catch (Exception ex) {
             Log.e("ReadStoredMessages", "Error while parsing stored messages. " + ex.getMessage());
             return null;
         }
     }
-
     private void requestWritePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);

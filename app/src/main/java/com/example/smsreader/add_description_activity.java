@@ -12,15 +12,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 public class add_description_activity extends AppCompatActivity {
     public String jsonData;
@@ -92,6 +88,9 @@ public class add_description_activity extends AppCompatActivity {
                             Log.d("add description activity", "file  exist" );
                             // Write JSON array to the file
                             FileWriter fileWriter = new FileWriter(file, true);
+                            if (file.length() > 0) {
+                                fileWriter.write(",");
+                            }
                             fileWriter.write(jsonData.toString());
                             fileWriter.close();
                             Log.d("JsonFileWriter", "JSON array written to file: " + file.getAbsolutePath());

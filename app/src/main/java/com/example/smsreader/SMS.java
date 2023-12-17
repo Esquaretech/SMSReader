@@ -3,20 +3,19 @@ package com.example.smsreader;
 public class SMS {
 
     String address;
-    String name;
+    String receiverName;
     String amount;
     String date;
     String time;
     String category;
-
     String description;
     Boolean isDescriptionAdded;
     String id;
 
-    public SMS(String address, String name, String amount, String date, String time, String category)
+    public SMS(String address, String receiverName, String amount, String date, String time, String category)
     {
         this.address = address;
-        this.name = name;
+        this.receiverName = receiverName;
         this.amount = "\u20B9 "+amount;
         this.date = date;
         this.time = time;
@@ -33,7 +32,7 @@ public class SMS {
 
     public String getName()
     {
-        return name;
+        return receiverName;
     }
 
     public String getAmount()
@@ -72,6 +71,15 @@ public class SMS {
 
     @Override
     public String toString() {
-        return "Address: " + address + ", Name: " + name + ", Amount: " + amount + ", Date: " + date + ", Time: " + time + ", Category: " + category;
+        return "SMS{" +
+                "id='" + id +
+                ", address='" + address +
+                ", receiver='" + receiverName +
+                ", amount='" + amount +
+                ", date='" + date +
+                ", time='" + time +
+                ", description='" + description +
+                ", category='" + category +
+                '}';
     }
 }

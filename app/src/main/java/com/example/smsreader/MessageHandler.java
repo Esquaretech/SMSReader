@@ -1,12 +1,5 @@
 package com.example.smsreader;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.util.Log;
-import android.widget.Toast;
-
-import android.content.Context;
-import android.widget.Toast;
 import android.util.Log;
 
 import java.text.SimpleDateFormat;
@@ -18,17 +11,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MessageHandler {
-
-    private static boolean isIdInList(List<SMS> smsList, String targetId) {
+    private static boolean isIdInList(ArrayList<SMS> smsList, String targetId) {
 
         if(smsList.size() > 0) {
             System.out.println("isIdInList Called");
             for (SMS sms : smsList) {
                 System.out.println("TargetId " + targetId);
-                if (sms.getId().contains(targetId)) {
-
+                if (sms.getId().equals(targetId)) {
+                    System.out.println("sms Id " + sms.getId());
                     System.out.println("Entry found " + targetId);
-
                     return true;
                 }
             }
@@ -41,7 +32,7 @@ public class MessageHandler {
         }
     }
 
-    public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate, List<SMS> storedMessages) {
+    public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate, ArrayList<SMS> storedMessages) {
 
         ArrayList<SMS> parsedMessages = new ArrayList<SMS>();
         try {
@@ -96,14 +87,18 @@ public class MessageHandler {
                         System.out.print("ID inside inbox messages (ATM transactions)"+id);
 
                         if(!isIdInList(storedMessages, id))
+                        {
                             parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "ATM"));
-                    }
+                    }}
                     else if (message.getBody().contains("UPI")
                             && !message.getBody().contains("timed out")
                             && !message.getBody().contains("requested")
                             && !message.getBody().contains("T&C")
                             && !message.getBody().contains("credited")
                             && !message.getBody().contains("fraud transaction")
+                            && !message.getBody().contains("NEVER share OTP")
+                            && !message.getBody().contains("UPI Activated")
+                            && !message.getBody().contains("UPI registration")
                             || message.getBody().contains("debited")) {
                         Log.d("SMS", "UPI category");
 
@@ -153,11 +148,12 @@ public class MessageHandler {
 
                         String id = message.getHeader() + formattedDate + formattedTime;
                         System.out.print("ID inside inbox messages (UPI transactions)"+id);
-                        System.out.print("ID inside stored messages (UPI transactions)"+storedMessages.size());
+                        System.out.print("  ID inside stored messages (UPI transactions)  "+storedMessages.size());
 
-                        if(!isIdInList(storedMessages, id))
-                            parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
-                    }
+                        if(!isIdInList(storedMessages, id)) {
+                           parsedMessages.add(new SMS(message.getHeader(), receiverName, transferredAmount, formattedDate, formattedTime, "UPI"));
+
+                    }}
                     else {
                         Log.d("SMS", "General category");
                         //messages.add(new SMS(address, "", "", "", "", "General"));
