@@ -31,7 +31,6 @@ public class MessageHandler {
             return false;
         }
     }
-
     public ArrayList<SMS> ParseMessage(List<Message> messages, String expectedDate, ArrayList<SMS> storedMessages) {
 
         ArrayList<SMS> parsedMessages = new ArrayList<SMS>();

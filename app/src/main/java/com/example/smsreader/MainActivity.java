@@ -2,7 +2,11 @@ package com.example.smsreader;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-
+import android.os.Bundle;
+import android.view.MenuItem;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -26,12 +30,18 @@ import android.os.Bundle;
 import android.provider.Telephony;
 
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.navigation.NavigationView;
+import androidx.navigation.ui.AppBarConfiguration;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,16 +50,24 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity  {
     private static final int PERMISSION_REQUEST_READ_SMS = 1001;
     private ArrayList<SMS> parsedMessages;
     private ArrayList<SMS> storedMessages;
     public String dateOfToday;
     private RecyclerView recyclerView;
     private SMSListAdapter adapter;
+    private DrawerLayout drawer;
+
+    private NavigationView navigationView;
+
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_READ_SMS) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                Toolbar toolbar = findViewById(R.id.toolbar);
+                setSupportActionBar(toolbar);
 
                 //Demo date for testing purpose
                 dateOfToday = "01-11-2023";
@@ -82,9 +100,66 @@ public class MainActivity extends Activity {
         }
     }
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_drawer, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_settings) {
+            return true;
+        } else {
+            // For other menu items
+            return super.onOptionsItemSelected(item);
+        }
+    }
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        drawer = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+
+        // Set up the navigation drawer
+        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
+                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
+                .setDrawerLayout(drawer)
+                .build();
+
+        // Initialize the NavController
+        // NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+
+        // Set up ActionBar with NavController
+        // NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+
+        // Set up navigation menu item clicks
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                // Handle navigation item clicks here
+                int id = item.getItemId();
+
+                if (id == R.id.nav_home) {
+                    // Handle home action
+                } else if (id == R.id.nav_gallery) {
+                    // Handle gallery action
+                } else if (id == R.id.nav_slideshow) {
+                    // Handle slideshow action
+                }
+
+                // Close the navigation drawer
+                drawer.closeDrawers();
+                return true;
+            }
+        });
 
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
